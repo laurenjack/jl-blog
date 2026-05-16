@@ -163,12 +163,13 @@ th { font-weight: 600; }
 }
 .katex { font-size: 1.05em; }
 
-/* Images inside posts can also extend wider than the prose column. */
+/* Images sit inside the prose column (not the wider math extension),
+   so they line up with the text rather than sticking out. */
 main article p > img,
 main article > img {
-	max-width: var(--measure-wide);
-	margin-left: calc((var(--measure) - var(--measure-wide)) / 2);
-	margin-right: calc((var(--measure) - var(--measure-wide)) / 2);
+	max-width: 100%;
+	margin-left: auto;
+	margin-right: auto;
 }
 
 /* Header / footer chrome */
@@ -246,11 +247,9 @@ ul.post-list .post-desc {
 }
 
 @media (max-width: 1024px) {
-	/* Once the viewport drops below the wide math width, snap math and
-	   images back into the prose column so nothing overflows the screen. */
-	.katex-display,
-	main article p > img,
-	main article > img {
+	/* Once the viewport drops below the wide math width, snap math back
+	   into the prose column so nothing overflows the screen. */
+	.katex-display {
 		margin-left: 0;
 		margin-right: 0;
 		max-width: 100%;
