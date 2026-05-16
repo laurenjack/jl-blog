@@ -48,7 +48,9 @@ def run_pandoc(docx: Path, media_dir: Path) -> str:
             "pandoc",
             str(docx),
             "-f", "docx",
-            "-t", "gfm+tex_math_dollars",
+            # `markdown` (pandoc's own) emits plain `$...$` for math; `gfm` wraps
+            # the math content in backticks which remark-math won't parse.
+            "-t", "markdown+tex_math_dollars-raw_attribute",
             "--wrap=none",
             "--extract-media", str(media_dir),
         ],
@@ -60,27 +62,105 @@ def run_pandoc(docx: Path, media_dir: Path) -> str:
 
 
 def rewrite_image_paths(md: str, slug: str) -> str:
-    """Pandoc emits absolute fs paths for extracted media; rewrite to /posts/<slug>/..."""
-    # Pandoc image syntax: ![alt](path) or ![alt](path "title")
-    # We rewrite anything under PUBLIC_POSTS_DIR / slug to a web-absolute path.
+    """Convert all image refs to markdown syntax with web-absolute paths.
+
+    Pandoc emits both markdown `![alt](path)` and raw `<img src="path" .../>`
+    tags (the latter when the source has attributes like width/style). We
+    normalize both to plain `![alt](/posts/<slug>/...)`.
+    """
     public_prefix = str(PUBLIC_POSTS_DIR / slug)
 
-    def repl(m: re.Match[str]) -> str:
-        alt, path = m.group(1), m.group(2)
-        if public_prefix in path:
-            web_path = path.split(public_prefix, 1)[1]
-            return f"![{alt}](/posts/{slug}{web_path})"
-        return m.group(0)
+    def to_web_path(fs_path: str) -> str | None:
+        if public_prefix in fs_path:
+            return f"/posts/{slug}{fs_path.split(public_prefix, 1)[1]}"
+        return None
 
-    return re.sub(r"!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)", repl, md)
+    def md_repl(m: re.Match[str]) -> str:
+        alt, path = m.group(1), m.group(2)
+        web = to_web_path(path)
+        return f"![{alt}]({web})" if web else m.group(0)
+
+    md = re.sub(r"!\[([^\]]*)\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)", md_repl, md)
+
+    def img_tag_repl(m: re.Match[str]) -> str:
+        src = m.group(1)
+        web = to_web_path(src)
+        return f"![]({web})" if web else m.group(0)
+
+    md = re.sub(r"<img\s+[^>]*src=\"([^\"]+)\"[^>]*/?>", img_tag_repl, md)
+    return md
+
+
+def strip_html_artifacts(md: str) -> str:
+    """Remove Google Docs styling artifacts and pandoc-specific syntax that
+    plain markdown renderers won't understand."""
+    # Raw underline tags from Google Docs underlined links.
+    md = re.sub(r"</?u>", "", md)
+
+    # Pandoc image-attribute blocks: ![](path){width="..." ...}  ->  ![](path)
+    md = re.sub(r"(\!\[[^\]]*\]\([^)]+\))\{[^}]*\}", r"\1", md)
+
+    # Google Docs underlined citation links come through as:
+    #   [[\[Author, year\]]{.underline}](url)
+    # Collapse to: [Author, year](url) -- one regex handles all of them.
+    md = re.sub(
+        r"\[\[\\\[([^\]]+?)\\\]\]\{\.underline\}\]\(([^)]+)\)",
+        r"[\1](\2)",
+        md,
+    )
+    # Any remaining inline-attribute spans (other underlines, smallcaps, etc.).
+    md = re.sub(r"\]\{[^}]*\}", "]", md)
+    for _ in range(3):
+        new = re.sub(r"\[\[([^\[\]]+)\]\]\(", r"[\1](", md)
+        if new == md:
+            break
+        md = new
+
+    # Unescape characters pandoc escaped that don't need to be escaped in
+    # plain markdown. Brackets in math are `\lbrack`/`\rbrack`, never `\[`,
+    # so global unescape is safe.
+    md = re.sub(r"\\\[", "[", md)
+    md = re.sub(r"\\\]", "]", md)
+    md = re.sub(r"\\'", "'", md)
+    md = re.sub(r"-\\>", "->", md)
+
+    # Place inline images on their own line so they don't sit at the end
+    # of a paragraph.
+    md = re.sub(r"([^\n])(\!\[[^\]]*\]\([^)]+\))", r"\1\n\n\2", md)
+
+    return md
 
 
 # Substitutions applied INSIDE math regions only. Google Docs can render
 # blackboard E, parallel bars, etc., but its OMML export collapses them to
 # plain glyphs that pandoc can't recover semantically.
+_GREEK = (
+    "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu "
+    "nu xi pi rho sigma tau upsilon phi chi psi omega "
+    "Gamma Delta Theta Lambda Xi Pi Sigma Upsilon Phi Psi Omega"
+).split()
+_LATEX_CMDS = _GREEK + [
+    "mathbb", "mathrm", "mathcal", "mathbf", "mathsf", "mathit",
+    "sum", "prod", "int", "frac", "sqrt", "log", "exp", "sin", "cos",
+    "le", "ge", "leq", "geq", "neq", "approx", "sim", "to", "infty",
+    "left", "right", "cdot", "times", "div", "pm", "mp",
+    "partial", "nabla", "in", "notin", "subset", "supset",
+    "forall", "exists", "implies", "iff", "vec", "hat", "bar", "tilde",
+    "begin", "end", "text", "label",
+]
+
+# Substitutions applied INSIDE math regions only.
+#
+# Google Docs renders \theta etc. as plain text characters (not via the
+# equation editor's symbol palette), so pandoc's OMML reader emits them as
+# `\backslash theta`. We rebuild the LaTeX command. We also handle a few
+# semantic gaps (E_X -> \mathbb{E}_X, KL -> \mathrm{KL}, || -> \|).
 MATH_SUBS: list[tuple[str, str]] = [
-    # Common operators that look like regular letters in Google Docs.
-    # Convert standalone E_X / E_D patterns to \mathbb{E}.
+    # Unescape LaTeX commands the OMML reader serialized as plain text.
+    (rf"\\backslash\s+({'|'.join(_LATEX_CMDS)})\b", r"\\\1"),
+    # Strip pandoc's `\ ` (escaped space) inside math.
+    (r"\\ ", " "),
+    # Blackboard E for expectations.
     (r"(?<![A-Za-z\\])E_([A-Za-z])", r"\\mathbb{E}_\1"),
     (r"(?<![A-Za-z\\])E_\{([^}]+)\}", r"\\mathbb{E}_{\1}"),
     # KL divergence label.
@@ -142,6 +222,7 @@ def main() -> int:
 
     md = run_pandoc(args.docx, media_dir)
     md = rewrite_image_paths(md, slug)
+    md = strip_html_artifacts(md)
     md = apply_math_substitutions(md)
     md = build_frontmatter(title, args.description, date) + md
 
