@@ -42,7 +42,7 @@ In this post we'll use the models and problems from the deep double descent pape
 
 One important point about the data, CIFAR10 by itself is too easy. Resnet18 saturates performance, approaching 100% accuracy. Models which generalize perfectly over a dataset do not exhibit double descent. So like [Nakkiran et. al, 2019](https://arxiv.org/abs/1912.02292) we randomly mislabel 15% of the training data. This random mislabelling introduces controlled **unexplainable variation**[^2] in the class label. We'll see why this is important in part 2. First, let's replicate the results:
 
-![](/posts/from-double-descent-to-scaling-laws/media/image5.png)
+![](/posts/from-double-descent-to-scaling-laws/media/image2.png)
 
 **Figure 2** - **The second descent regime is poorly calibrated.** We replicate[^3] the results in Deep Double Descent [Nakkiran et. al, 2019], also showing and log loss[^4]. It is important to note the model is trained on the 85% mislabelled CIFAR10 training set, but the test set is clean. The log loss also exhibits double descent, but the loss is much higher than the classical minimum.
 
@@ -58,7 +58,7 @@ I show that a simple calibration technique (temperature scaling) [Guo et. al, 20
 
 Of course we can do better than this still, we can do better still, early stopping completely removes the double descent bump:
 
-![](/posts/from-double-descent-to-scaling-laws/media/image2.png)
+![](/posts/from-double-descent-to-scaling-laws/media/image5.png)
 
 **Figure 4 - Early stopping eliminates double descent for both the loss and accuracy** - At each k, we report the accuracy and loss for the model checkpoint which had the lowest validation loss.
 
@@ -78,15 +78,15 @@ Once again, in terms of our evaluation metric[^8] and the loss, overparameteriza
 
 Bias and variance are defined by precise second order quantities,[^9] but typically used in a more general sense. Bias is the systematic error in our model. It measures the error in our *expected* model, over all possible training sets. Variance is the random error in our model. It reflects how much a model trained by a particular training set is *expected* to deviate from the *expected* model.
 
-Getting precise, we want to model an unknown probability distribution $p(y | x)$, where y is the image class / the next token, and x is the image / all preceding tokens. We don't know $p(y | x)$, but we want to estimate it using our model $q(y | x, \theta)$, where \\theta represents the learned parameters. Our estimate is produced by training \\theta on a set of n samples, $\{(x, y)\}^{n}\sim D$.
+Getting precise, we want to model an unknown probability distribution $p(y | x)$, where y is the image class / the next token, and x is the image / all preceding tokens. We don't know $p(y | x)$, but we want to estimate it using our model $q(y | x, \theta)$, where $\theta$ represents the learned parameters. Our estimate is produced by training $\theta$ on a set of n samples, $\{(x, y)\}^{n}\sim D$.
 
 For a model produced by a single training set, across the distribution of X we have the cross entropy loss of our estimator (where C is the number of classes):
 
-$L(x) = - \mathbb{E}_{X}\sum_{y = 1}^{C}p(y |x )log(q(y|x, \theta))$
+$L(x) = - \mathbb{E}_{X}\sum_{y = 1}^{C}p(y |x )\log(q(y|x, \theta))$
 
 However D itself (the training set) is also a random variable. We only see a single training set, but we are still beholden to the variance induced by it. What must analyze our training process, irrespective of the particular training set we happened to sample, the risk over all possible training sets:
 
-$R(x) = - \mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )log(q(y|x, \theta))$
+$R(x) = - \mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\log(q(y|x, \theta))$
 
 We want to decompose this into 3 parts:
 
@@ -96,32 +96,32 @@ We want to decompose this into 3 parts:
 
 3.  The random error in our estimate (our variance-like term)
 
-By adding and subtracting $log(p(y | x))$at each point x, we can separate the first term:
+By adding and subtracting $\log(p(y | x))$at each point x, we can separate the first term:
 
-$R(x) = - \mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\lbrack log(q(y|x, \theta))  +  log(p(y |x))  -  log(p(y |x ))\rbrack$
+$R(x) = - \mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\lbrack \log(q(y|x, \theta))  +  \log(p(y |x))  -  \log(p(y |x ))\rbrack$
 
-$R(x) = - \mathbb{E}_{X}\sum_{y = 1}^{C}p(y |x )log(p(y |x))  +  \mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )log\frac{p(y |x )}{q(y|x, \theta)}$
+$R(x) = - \mathbb{E}_{X}\sum_{y = 1}^{C}p(y |x )\log(p(y |x))  +  \mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\log\frac{p(y |x )}{q(y|x, \theta)}$
 
 $R(x) =  H(p(y |x ))  +  \mathbb{E}_{X}\mathbb{E}_{D}\mathrm{KL}(p(y|x) \| q(y|x, \theta))$
 
-The first term is the entropy in y (given x), this is our unexplainable variation. The second term is the KL divergence between our target distribution and the estimate. To obtain terms for bias and variance, we need a reference to $\mathbb{E}_{D}q(y|x, \theta)$ our expected model over all training sets. We can center $log(q(y|x, \theta)$, by adding then subtracting $log(\mathbb{E}_{D}q(y|x, \theta))$:
+The first term is the entropy in y (given x), this is our unexplainable variation. The second term is the KL divergence between our target distribution and the estimate. To obtain terms for bias and variance, we need a reference to $\mathbb{E}_{D}q(y|x, \theta)$ our expected model over all training sets. We can center $\log(q(y|x, \theta)$, by adding then subtracting $\log(\mathbb{E}_{D}q(y|x, \theta))$:
 
-$\mathrm{KL}(p(y|x) \| q(y|x, \theta)) = \sum_{y = 1}^{C}p(y |x )\lbrack log\frac{p(y |x )}{q(y|x, \theta)}  +  log(\mathbb{E}_{D}q(y|x, \theta))  -  log(\mathbb{E}_{D}q(y|x, \theta))\rbrack\$
+$\mathrm{KL}(p(y|x) \| q(y|x, \theta)) = \sum_{y = 1}^{C}p(y |x )\lbrack \log\frac{p(y |x )}{q(y|x, \theta)}  +  \log(\mathbb{E}_{D}q(y|x, \theta))  -  \log(\mathbb{E}_{D}q(y|x, \theta))\rbrack$
 
-$\mathrm{KL}(p(y|x) \| q(y|x, \theta)) = \sum_{y = 1}^{C}p(y |x )\lbrack log\frac{p(y |x )}{\mathbb{E}_{D}q(y|x, \theta)}  +  log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}\rbrack\$
+$\mathrm{KL}(p(y|x) \| q(y|x, \theta)) = \sum_{y = 1}^{C}p(y |x )\lbrack \log\frac{p(y |x )}{\mathbb{E}_{D}q(y|x, \theta)}  +  \log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}\rbrack$
 
-$\mathrm{KL}(p(y|x) \| q(y|x, \theta)) = \sum_{y = 1}^{C}p(y |x )log\frac{p(y |x )}{\mathbb{E}_{D}q(y|x, \theta)}  +  \sum_{y = 1}^{C}p(y |x )log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}$
+$\mathrm{KL}(p(y|x) \| q(y|x, \theta)) = \sum_{y = 1}^{C}p(y |x )\log\frac{p(y |x )}{\mathbb{E}_{D}q(y|x, \theta)}  +  \sum_{y = 1}^{C}p(y |x )\log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}$
 
-$\mathrm{KL}(p(y|x) \| q(y|x, \theta)) = \mathrm{KL}(p(y|x) \| \mathbb{E}_{D}q(y|x, \theta))  +  \sum_{y = 1}^{C}p(y |x )log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}$
+$\mathrm{KL}(p(y|x) \| q(y|x, \theta)) = \mathrm{KL}(p(y|x) \| \mathbb{E}_{D}q(y|x, \theta))  +  \sum_{y = 1}^{C}p(y |x )\log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}$
 
 The term on the left gives us our bias-like metric, notice it does not depend on our training set D[^10]. It is the KL divergence between our target distribution, and our expected estimator. The term on the right is our variance-like metric. It reflects the divergence of a given training run, from the expected training run. The fact that we normalize by $p(y |x )$ means it is not a KL divergence, but normalizing by $p(y |x )$ is exactly what we want[^11], because we are interested in that divergence in the places the data actually occurs.
 
 Coming back to the risk, we have the the final decomposition:\
 $R(x) =  H(p(y |x ))  +  \mathbb{E}_{X}\mathbb{E}_{D}\mathrm{KL}(p(y|x) \| q(y|x, \theta))$
 
-$R(x) =  H(p(y |x ))  +  \mathbb{E}_{X}\mathbb{E}_{D}\lbrack \mathrm{KL}(p(y|x) \| \mathbb{E}_{D}q(y|x, \theta))  +  \sum_{y = 1}^{C}p(y |x )log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}\rbrack$
+$R(x) =  H(p(y |x ))  +  \mathbb{E}_{X}\mathbb{E}_{D}\lbrack \mathrm{KL}(p(y|x) \| \mathbb{E}_{D}q(y|x, \theta))  +  \sum_{y = 1}^{C}p(y |x )\log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}\rbrack$
 
-$R(x) =  H(p(y |x ))  +  \mathbb{E}_{X}\mathrm{KL}(p(y|x) \| \mathbb{E}_{D}q(y|x, \theta))  +  \mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}$
+$R(x) =  H(p(y |x ))  +  \mathbb{E}_{X}\mathrm{KL}(p(y|x) \| \mathbb{E}_{D}q(y|x, \theta))  +  \mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}$
 
 Our three terms:
 
@@ -129,7 +129,7 @@ Our three terms:
 
 2.  $\mathbb{E}_{X}\mathrm{KL}(p(y|x) \| \mathbb{E}_{D}q(y|x, \theta))$ - systematic error in $q(y|x, \theta)$ - KL divergence of $p(y |x )$ and the expected model, across all x \~ X, our bias metric.
 
-3.  $\mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}$ - random error in $q(y|x, \theta)$ - The *Jensen Gap* of $q(y|x, \theta)$, across all training sets $\{(x, y)\}^{n}\sim D$, across x \~ X, our variance metric.
+3.  $\mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}$ - random error in $q(y|x, \theta)$ - The *Jensen Gap* of $q(y|x, \theta)$, across all training sets $\{(x, y)\}^{n}\sim D$, across x \~ X, our variance metric.
 
 ### Getting Empirical Again
 
@@ -141,7 +141,7 @@ $\mathbb{E}_{D}q(y|x, \theta)  \approx  \frac{1}{M}\sum_{m = 1}^{M}q(y|x, \theta
 
 Much like the empirical cross entropy loss we can use the sampled y values to compute the empirical Jensen Gap (variance):
 
-$\mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)} \approx \frac{1}{M}\sum_{m = 1}^{M}\frac{1}{n}\sum_{i = 1}^{n}\sum_{y = 1}^{C}y_{}*log\frac{\frac{1}{M}\sum_{m = 1}^{M}q(y|x, \theta)_{}}{q(y|x, \theta)}\$
+$\mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)} \approx \frac{1}{M}\sum_{m = 1}^{M}\frac{1}{n}\sum_{i = 1}^{n}\sum_{y = 1}^{C}y_{}*\log\frac{\frac{1}{M}\sum_{m = 1}^{M}q(y|x, \theta)_{}}{q(y|x, \theta)}$
 
 For the sake of readability, I have omitted the indices inside the sum. Each x is the ith input in the mth model's training set. y has those indices too, and a class index. y is 1 for the true class / token and zero elsewhere.
 

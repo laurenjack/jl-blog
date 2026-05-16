@@ -124,6 +124,11 @@ def strip_html_artifacts(md: str) -> str:
     md = re.sub(r"\\'", "'", md)
     md = re.sub(r"-\\>", "->", md)
 
+    # Repair math regions where pandoc escaped the closing `$` delimiter,
+    # e.g. `$ ... \rbrack\$` -> `$ ... \rbrack$`. Heuristic: a line that
+    # opens with `$` and ends with `\$` is a malformed inline math close.
+    md = re.sub(r"^\$(.+?)\\\$$", r"$\1$", md, flags=re.MULTILINE)
+
     # Place inline images on their own line so they don't sit at the end
     # of a paragraph.
     md = re.sub(r"([^\n])(\!\[[^\]]*\]\([^)]+\))", r"\1\n\n\2", md)
@@ -155,6 +160,14 @@ _LATEX_CMDS = _GREEK + [
 # equation editor's symbol palette), so pandoc's OMML reader emits them as
 # `\backslash theta`. We rebuild the LaTeX command. We also handle a few
 # semantic gaps (E_X -> \mathbb{E}_X, KL -> \mathrm{KL}, || -> \|).
+# LaTeX function names that should render upright (non-italic) in math mode.
+# Google Docs writes these as plain letters; we prefix them with a backslash
+# so KaTeX renders them as operators.
+_MATH_FUNCS = [
+    "log", "ln", "exp", "sin", "cos", "tan",
+    "det", "lim", "max", "min", "sup", "inf", "arg", "Pr",
+]
+
 MATH_SUBS: list[tuple[str, str]] = [
     # Unescape LaTeX commands the OMML reader serialized as plain text.
     (rf"\\backslash\s+({'|'.join(_LATEX_CMDS)})\b", r"\\\1"),
@@ -167,6 +180,8 @@ MATH_SUBS: list[tuple[str, str]] = [
     (r"(?<![A-Za-z\\])KL\(", r"\\mathrm{KL}("),
     # Parallel bars: || -> \| (KaTeX renders \| as ∥).
     (r"\|\|", r"\\|"),
+    # Common math function names: log -> \log etc.
+    (rf"(?<![\\A-Za-z])({'|'.join(_MATH_FUNCS)})\b", r"\\\1"),
 ]
 
 
