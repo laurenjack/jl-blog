@@ -82,11 +82,15 @@ Getting precise, we want to model an unknown probability distribution $p(y | x)$
 
 For a model produced by a single training set, across the distribution of X we have the cross entropy loss of our estimator (where C is the number of classes):
 
-$L(x) = - \mathbb{E}_{X}\sum_{y = 1}^{C}p(y |x )\log(q(y|x, \theta))$
+$$
+L(x) = - \mathbb{E}_{X}\sum_{y = 1}^{C}p(y |x )\log(q(y|x, \theta))
+$$
 
 However D itself (the training set) is also a random variable. We only see a single training set, but we are still beholden to the variance induced by it. What must analyze our training process, irrespective of the particular training set we happened to sample, the risk over all possible training sets:
 
-$R(x) = - \mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\log(q(y|x, \theta))$
+$$
+R(x) = - \mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\log(q(y|x, \theta))
+$$
 
 We want to decompose this into 3 parts:
 
@@ -98,30 +102,50 @@ We want to decompose this into 3 parts:
 
 By adding and subtracting $\log(p(y | x))$at each point x, we can separate the first term:
 
-$R(x) = - \mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\lbrack \log(q(y|x, \theta))  +  \log(p(y |x))  -  \log(p(y |x ))\rbrack$
+$$
+R(x) = - \mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\lbrack \log(q(y|x, \theta))  +  \log(p(y |x))  -  \log(p(y |x ))\rbrack
+$$
 
-$R(x) = - \mathbb{E}_{X}\sum_{y = 1}^{C}p(y |x )\log(p(y |x))  +  \mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\log\frac{p(y |x )}{q(y|x, \theta)}$
+$$
+R(x) = - \mathbb{E}_{X}\sum_{y = 1}^{C}p(y |x )\log(p(y |x))  +  \mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\log\frac{p(y |x )}{q(y|x, \theta)}
+$$
 
-$R(x) =  H(p(y |x ))  +  \mathbb{E}_{X}\mathbb{E}_{D}\mathrm{KL}(p(y|x) \| q(y|x, \theta))$
+$$
+R(x) =  H(p(y |x ))  +  \mathbb{E}_{X}\mathbb{E}_{D}\mathrm{KL}(p(y|x) \| q(y|x, \theta))
+$$
 
 The first term is the entropy in y (given x), this is our unexplainable variation. The second term is the KL divergence between our target distribution and the estimate. To obtain terms for bias and variance, we need a reference to $\mathbb{E}_{D}q(y|x, \theta)$ our expected model over all training sets. We can center $\log(q(y|x, \theta)$, by adding then subtracting $\log(\mathbb{E}_{D}q(y|x, \theta))$:
 
-$\mathrm{KL}(p(y|x) \| q(y|x, \theta)) = \sum_{y = 1}^{C}p(y |x )\lbrack \log\frac{p(y |x )}{q(y|x, \theta)}  +  \log(\mathbb{E}_{D}q(y|x, \theta))  -  \log(\mathbb{E}_{D}q(y|x, \theta))\rbrack$
+$$
+\mathrm{KL}(p(y|x) \| q(y|x, \theta)) = \sum_{y = 1}^{C}p(y |x )\lbrack \log\frac{p(y |x )}{q(y|x, \theta)}  +  \log(\mathbb{E}_{D}q(y|x, \theta))  -  \log(\mathbb{E}_{D}q(y|x, \theta))\rbrack
+$$
 
-$\mathrm{KL}(p(y|x) \| q(y|x, \theta)) = \sum_{y = 1}^{C}p(y |x )\lbrack \log\frac{p(y |x )}{\mathbb{E}_{D}q(y|x, \theta)}  +  \log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}\rbrack$
+$$
+\mathrm{KL}(p(y|x) \| q(y|x, \theta)) = \sum_{y = 1}^{C}p(y |x )\lbrack \log\frac{p(y |x )}{\mathbb{E}_{D}q(y|x, \theta)}  +  \log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}\rbrack
+$$
 
-$\mathrm{KL}(p(y|x) \| q(y|x, \theta)) = \sum_{y = 1}^{C}p(y |x )\log\frac{p(y |x )}{\mathbb{E}_{D}q(y|x, \theta)}  +  \sum_{y = 1}^{C}p(y |x )\log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}$
+$$
+\mathrm{KL}(p(y|x) \| q(y|x, \theta)) = \sum_{y = 1}^{C}p(y |x )\log\frac{p(y |x )}{\mathbb{E}_{D}q(y|x, \theta)}  +  \sum_{y = 1}^{C}p(y |x )\log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}
+$$
 
-$\mathrm{KL}(p(y|x) \| q(y|x, \theta)) = \mathrm{KL}(p(y|x) \| \mathbb{E}_{D}q(y|x, \theta))  +  \sum_{y = 1}^{C}p(y |x )\log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}$
+$$
+\mathrm{KL}(p(y|x) \| q(y|x, \theta)) = \mathrm{KL}(p(y|x) \| \mathbb{E}_{D}q(y|x, \theta))  +  \sum_{y = 1}^{C}p(y |x )\log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}
+$$
 
 The term on the left gives us our bias-like metric, notice it does not depend on our training set D[^10]. It is the KL divergence between our target distribution, and our expected estimator. The term on the right is our variance-like metric. It reflects the divergence of a given training run, from the expected training run. The fact that we normalize by $p(y |x )$ means it is not a KL divergence, but normalizing by $p(y |x )$ is exactly what we want[^11], because we are interested in that divergence in the places the data actually occurs.
 
 Coming back to the risk, we have the the final decomposition:\
-$R(x) =  H(p(y |x ))  +  \mathbb{E}_{X}\mathbb{E}_{D}\mathrm{KL}(p(y|x) \| q(y|x, \theta))$
+$$
+R(x) =  H(p(y |x ))  +  \mathbb{E}_{X}\mathbb{E}_{D}\mathrm{KL}(p(y|x) \| q(y|x, \theta))
+$$
 
-$R(x) =  H(p(y |x ))  +  \mathbb{E}_{X}\mathbb{E}_{D}\lbrack \mathrm{KL}(p(y|x) \| \mathbb{E}_{D}q(y|x, \theta))  +  \sum_{y = 1}^{C}p(y |x )\log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}\rbrack$
+$$
+R(x) =  H(p(y |x ))  +  \mathbb{E}_{X}\mathbb{E}_{D}\lbrack \mathrm{KL}(p(y|x) \| \mathbb{E}_{D}q(y|x, \theta))  +  \sum_{y = 1}^{C}p(y |x )\log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}\rbrack
+$$
 
-$R(x) =  H(p(y |x ))  +  \mathbb{E}_{X}\mathrm{KL}(p(y|x) \| \mathbb{E}_{D}q(y|x, \theta))  +  \mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}$
+$$
+R(x) =  H(p(y |x ))  +  \mathbb{E}_{X}\mathrm{KL}(p(y|x) \| \mathbb{E}_{D}q(y|x, \theta))  +  \mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)}
+$$
 
 Our three terms:
 
@@ -137,11 +161,15 @@ Let's apply our decomposition to the Resnet18 and transformer on their respectiv
 
 We can estimate $\mathbb{E}_{D}q(y|x, \theta)$ with the sample mean (where M is the number of models trained on disjoint training sets):
 
-$\mathbb{E}_{D}q(y|x, \theta)  \approx  \frac{1}{M}\sum_{m = 1}^{M}q(y|x, \theta)_{m}$
+$$
+\mathbb{E}_{D}q(y|x, \theta)  \approx  \frac{1}{M}\sum_{m = 1}^{M}q(y|x, \theta)_{m}
+$$
 
 Much like the empirical cross entropy loss we can use the sampled y values to compute the empirical Jensen Gap (variance):
 
-$\mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)} \approx \frac{1}{M}\sum_{m = 1}^{M}\frac{1}{n}\sum_{i = 1}^{n}\sum_{y = 1}^{C}y_{}*\log\frac{\frac{1}{M}\sum_{m = 1}^{M}q(y|x, \theta)_{}}{q(y|x, \theta)}$
+$$
+\mathbb{E}_{X}\mathbb{E}_{D}\sum_{y = 1}^{C}p(y |x )\log\frac{\mathbb{E}_{D}q(y|x, \theta)}{q(y|x, \theta)} \approx \frac{1}{M}\sum_{m = 1}^{M}\frac{1}{n}\sum_{i = 1}^{n}\sum_{y = 1}^{C}y_{}*\log\frac{\frac{1}{M}\sum_{m = 1}^{M}q(y|x, \theta)_{}}{q(y|x, \theta)}
+$$
 
 For the sake of readability, I have omitted the indices inside the sum. Each x is the ith input in the mth model's training set. y has those indices too, and a class index. y is 1 for the true class / token and zero elsewhere.
 
@@ -191,7 +219,9 @@ We currently favour the dataset types that scale, doubling down on pre-training,
 
 [Hastie et. al, 2022] (first published in 2019) and [Bartlett et. al 2020] explore fitting a well-specified regression problem:
 
-$y  =  x\beta  +  \epsilon$
+$$
+y  =  x\beta  +  \epsilon
+$$
 
 [Hastie et. al, 2022] increase p by spreading the signal across more dimensions. They keep the magnitude of $\beta$ is fixed (and the error) as they increase the number of parameters. They demonstrate analytically that under gradient descent, minimizing the mean squared error, double descent occurs.
 

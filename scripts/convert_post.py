@@ -129,6 +129,17 @@ def strip_html_artifacts(md: str) -> str:
     # opens with `$` and ends with `\$` is a malformed inline math close.
     md = re.sub(r"^\$(.+?)\\\$$", r"$\1$", md, flags=re.MULTILINE)
 
+    # Promote standalone-line inline math to display math.
+    # Pandoc emits all OMML equations as `$...$` (inline), even when they
+    # occupy a whole paragraph. Remark-math only treats `$$` as display
+    # math when the delimiters sit on their own lines, so we expand to:
+    #   $$
+    #   <content>
+    #   $$
+    # This makes KaTeX emit `<span class="katex-display">`, which our CSS
+    # extends wider than the prose column.
+    md = re.sub(r"^\$([^$\n]+)\$$", r"$$\n\1\n$$", md, flags=re.MULTILINE)
+
     # Place inline images on their own line so they don't sit at the end
     # of a paragraph.
     md = re.sub(r"([^\n])(\!\[[^\]]*\]\([^)]+\))", r"\1\n\n\2", md)

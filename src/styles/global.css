@@ -12,7 +12,7 @@
 	--accent-visited: #553388;
 	--code-bg: #f1ede4;
 	--measure: 48rem;        /* prose column ~768px */
-	--measure-wide: 64rem;   /* display math + images extend to ~1024px on desktop */
+	--measure-wide: 72rem;   /* display math extends to ~1152px on desktop */
 }
 
 html {
@@ -246,7 +246,7 @@ ul.post-list .post-desc {
 	border: 0;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1152px) {
 	/* Once the viewport drops below the wide math width, snap math back
 	   into the prose column so nothing overflows the screen. */
 	.katex-display {
