@@ -11,7 +11,8 @@
 	--accent: #285577;
 	--accent-visited: #553388;
 	--code-bg: #f1ede4;
-	--measure: 38rem;
+	--measure: 48rem;        /* prose column ~768px */
+	--measure-wide: 64rem;   /* display math + images extend to ~1024px on desktop */
 }
 
 html {
@@ -152,13 +153,23 @@ th { font-weight: 600; }
 .footnotes li { margin-bottom: 0.4em; }
 .footnotes a.data-footnote-backref { margin-left: 0.3em; }
 
-/* KaTeX block math: a little vertical breathing room */
+/* KaTeX block math: extend beyond the prose column so most equations fit
+   on one line on desktop. Negative margins are clamped on mobile. */
 .katex-display {
-	margin: 1.3em 0;
+	margin: 1.3em calc((var(--measure) - var(--measure-wide)) / 2);
+	max-width: var(--measure-wide);
 	overflow-x: auto;
 	overflow-y: hidden;
 }
 .katex { font-size: 1.05em; }
+
+/* Images inside posts can also extend wider than the prose column. */
+main article p > img,
+main article > img {
+	max-width: var(--measure-wide);
+	margin-left: calc((var(--measure) - var(--measure-wide)) / 2);
+	margin-right: calc((var(--measure) - var(--measure-wide)) / 2);
+}
 
 /* Header / footer chrome */
 header.site-header,
@@ -232,6 +243,18 @@ ul.post-list .post-desc {
 	clip: rect(0, 0, 0, 0);
 	white-space: nowrap;
 	border: 0;
+}
+
+@media (max-width: 1024px) {
+	/* Once the viewport drops below the wide math width, snap math and
+	   images back into the prose column so nothing overflows the screen. */
+	.katex-display,
+	main article p > img,
+	main article > img {
+		margin-left: 0;
+		margin-right: 0;
+		max-width: 100%;
+	}
 }
 
 @media (max-width: 640px) {
