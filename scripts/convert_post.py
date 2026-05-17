@@ -50,7 +50,11 @@ def run_pandoc(docx: Path, media_dir: Path) -> str:
             "-f", "docx",
             # `markdown` (pandoc's own) emits plain `$...$` for math; `gfm` wraps
             # the math content in backticks which remark-math won't parse.
-            "-t", "markdown+tex_math_dollars-raw_attribute",
+            # `pipe_tables` (with simple/multiline/grid disabled) gives
+            # GFM `| col | col |` tables that remark-gfm understands.
+            "-t",
+            "markdown+tex_math_dollars-raw_attribute"
+            "+pipe_tables-multiline_tables-simple_tables-grid_tables",
             "--wrap=none",
             "--extract-media", str(media_dir),
         ],
