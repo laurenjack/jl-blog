@@ -236,6 +236,35 @@ ul.post-list .post-desc {
 	font-size: 0.92em;
 }
 
+/* Footnote tooltips (created by the script in BlogPost.astro). */
+.footnote-tooltip {
+	position: absolute;
+	max-width: 22rem;
+	padding: 0.7em 0.9em;
+	background: #1a1a1a;
+	color: #f4f1ea;
+	font-family: Georgia, 'Iowan Old Style', 'Charter', ui-serif, serif;
+	font-size: 0.9em;
+	line-height: 1.5;
+	border-radius: 4px;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+	z-index: 100;
+}
+.footnote-tooltip p {
+	margin: 0 0 0.5em;
+}
+.footnote-tooltip p:last-child {
+	margin: 0;
+}
+.footnote-tooltip a {
+	color: #b8d4f0;
+	text-decoration: underline;
+}
+.footnote-tooltip a:hover {
+	color: #ffffff;
+}
+.footnote-tooltip .katex { color: inherit; }
+
 .sr-only {
 	position: absolute;
 	width: 1px; height: 1px;

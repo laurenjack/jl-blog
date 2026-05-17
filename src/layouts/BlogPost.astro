@@ -32,5 +32,82 @@ const { title, description, pubDate, updatedDate } = Astro.props;
 			</article>
 		</main>
 		<Footer />
+
+		<script>
+			// Footnote hover tooltips: pull each footnote body into a popover
+			// when the reader hovers a [^N] reference. Click still jumps to
+			// the full footnote list at the bottom.
+			(() => {
+				const refs = document.querySelectorAll<HTMLAnchorElement>(
+					'a[href^="#user-content-fn-"]'
+				);
+				if (!refs.length) return;
+
+				let tooltip: HTMLDivElement | null = null;
+				let hideTimer: ReturnType<typeof setTimeout> | null = null;
+
+				const removeTooltip = () => {
+					if (tooltip) {
+						tooltip.remove();
+						tooltip = null;
+					}
+				};
+
+				const scheduleHide = () => {
+					if (hideTimer) clearTimeout(hideTimer);
+					hideTimer = setTimeout(removeTooltip, 150);
+				};
+
+				const cancelHide = () => {
+					if (hideTimer) {
+						clearTimeout(hideTimer);
+						hideTimer = null;
+					}
+				};
+
+				refs.forEach((ref) => {
+					const fnId = ref.getAttribute('href')?.slice(1);
+					if (!fnId) return;
+					const fn = document.getElementById(fnId);
+					if (!fn) return;
+
+					// Build the tooltip HTML once: strip the back-reference link,
+					// keep paragraphs and links inside.
+					const fnClone = fn.cloneNode(true) as HTMLElement;
+					fnClone
+						.querySelectorAll('a[href^="#user-content-fnref"]')
+						.forEach((a) => a.remove());
+					const content = fnClone.innerHTML.trim();
+
+					ref.addEventListener('mouseenter', () => {
+						cancelHide();
+						removeTooltip();
+						tooltip = document.createElement('div');
+						tooltip.className = 'footnote-tooltip';
+						tooltip.innerHTML = content;
+						tooltip.addEventListener('mouseenter', cancelHide);
+						tooltip.addEventListener('mouseleave', scheduleHide);
+						document.body.appendChild(tooltip);
+
+						// Position above the ref, nudged to stay within viewport.
+						const rect = ref.getBoundingClientRect();
+						const tipRect = tooltip.getBoundingClientRect();
+						let left = rect.left + window.scrollX - tipRect.width / 2 + rect.width / 2;
+						let top = rect.top + window.scrollY - tipRect.height - 10;
+						const margin = 8;
+						if (left < margin) left = margin;
+						if (left + tipRect.width > window.innerWidth - margin) {
+							left = window.innerWidth - tipRect.width - margin;
+						}
+						if (top < window.scrollY + margin) {
+							top = rect.bottom + window.scrollY + 10;
+						}
+						tooltip.style.left = `${left}px`;
+						tooltip.style.top = `${top}px`;
+					});
+					ref.addEventListener('mouseleave', scheduleHide);
+				});
+			})();
+		</script>
 	</body>
 </html>
