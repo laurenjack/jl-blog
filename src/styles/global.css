@@ -201,6 +201,7 @@ p.intro {
 	font-size: 1.15rem;
 	line-height: 1.55;
 	color: var(--text);
+	text-align: center;
 	margin: 0.5em 0 2em;
 }
 
