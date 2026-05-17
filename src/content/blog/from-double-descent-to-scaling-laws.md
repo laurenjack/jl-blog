@@ -8,7 +8,7 @@ pubDate: "2026-05-16"
 
 Furthermore, that overfitting is **effective**. The CNN's and sequence models of the 2010's era that won the competitions and ran in production systems were often overparameterized[^1] and exhibited **benign overfitting**. That is to say, they overfit their training data heavily yet generalized well.
 
-Then, just as I'd internalized benign overfitting as part of the magic of deep learning, I realized pre-trained LLM's don't do this. LLM's are only slightly more confident about the sequences they saw during training than unseen sequences. In fact, the difference between validation and train loss is barely perceptible [Kaplan et. al, 2020](https://arxiv.org/abs/2001.08361).
+Then, just as I'd internalized benign overfitting as part of the magic of deep learning, I realized pre-trained LLM's don't do this. LLM's are only slightly more confident about the sequences they saw during training than unseen sequences. In fact, the difference between validation and train loss is barely perceptible [[Kaplan et. al, 2020](https://arxiv.org/abs/2001.08361)].
 
 This post reconciles the highly overfitting deep learning models from the 2010's with the scaling-law-driven, well-parameterized pre-trained LLM's of the 2020's. I suspect many researchers have the loose picture of this transition in their heads, this post makes it concrete.
 
@@ -22,15 +22,15 @@ Smaller models, trained for shorter durations tend to be **biased** because they
 
 This is the bias variance tradeoff, which is taught as fundamental in Statistics and Machine Learning. While the trade-off can be viewed empirically on a wide range of learning problems, there is no grand theory that proves larger models always have higher variance. In fact, many simple learning problems like linear regression, provably exhibit double descent (see part 2). Bias and variance are fundamental, but the trade-off is not.
 
-Double descent was coined by [Belkin et. al, 2018](https://arxiv.org/abs/1812.11118). In this paper, the authors experiment by increasing the size of a model for a fixed dataset, for both neural networks and boosted trees. With increasing model size, they observe classification error first falls, then rises, but *then falls again*, continuing to fall towards a lower minimum.
+Double descent was coined by [[Belkin et. al, 2018](https://arxiv.org/abs/1812.11118)]. In this paper, the authors experiment by increasing the size of a model for a fixed dataset, for both neural networks and boosted trees. With increasing model size, they observe classification error first falls, then rises, but *then falls again*, continuing to fall towards a lower minimum.
 
-Likewise [Nakkiran et. al, 2019](https://arxiv.org/abs/1912.02292) published *Deep Double Descent*, showing the same phenomenon in large deep learning models. Specifically, in convolutional neural networks, and in transformers. Figure 1 contains the first graph from that work:
+Likewise [[Nakkiran et. al, 2019](https://arxiv.org/abs/1912.02292)] published *Deep Double Descent*, showing the same phenomenon in large deep learning models. Specifically, in convolutional neural networks, and in transformers. Figure 1 contains the first graph from that work:
 
-Models in the second descent exhibit *benign overfitting*, a term popularized by [Zhang et. al, 2016](https://arxiv.org/abs/1611.03530). They conclude that neural networks, despite having the capacity to fully fit the training data (and doing so), still manage to generalize well. [Belkin et. al, 2018](https://arxiv.org/abs/1812.11118) name the point where the model fits all training class labels perfectly the *interpolation threshold*. Double descent tends to occur around the interpolation threshold.
+Models in the second descent exhibit *benign overfitting*, a term popularized by [[Zhang et. al, 2016](https://arxiv.org/abs/1611.03530)]. They conclude that neural networks, despite having the capacity to fully fit the training data (and doing so), still manage to generalize well. [[Belkin et. al, 2018](https://arxiv.org/abs/1812.11118)] name the point where the model fits all training class labels perfectly the *interpolation threshold*. Double descent tends to occur around the interpolation threshold.
 
 ![](/posts/from-double-descent-to-scaling-laws/media/image1.png)
 
-People have trained various kinds of overparameterized models since the 90's, especially the Bayesians. Contrary to popular belief, overparameterization and other violations of the bias-variance trade-off are not new phenomena, nor are they specific to deep learning. *Deep Learning is not so Mysterious or Different* [Wilson, 2025](https://arxiv.org/pdf/2503.02113) provides an excellent summary. The point is, these phenomena have existed for a while, not just in deep learning, and we just began to study them in detail in the late 2010s.
+People have trained various kinds of overparameterized models since the 90's, especially the Bayesians. Contrary to popular belief, overparameterization and other violations of the bias-variance trade-off are not new phenomena, nor are they specific to deep learning. *Deep Learning is not so Mysterious or Different* [[Wilson, 2025](https://arxiv.org/pdf/2503.02113)] provides an excellent summary. The point is, these phenomena have existed for a while, not just in deep learning, and we just began to study them in detail in the late 2010s.
 
 ### Convolutional Neural Nets
 
@@ -38,9 +38,9 @@ Increasing the number of parameters in CNN for a fixed dataset monotonically yie
 
 This makes hyper-parameter search and finding the architecture in the first place easier. Rather than finding the specific model width that achieves the classical minimum, the researcher simply needs to increase model width (the larger the better). We see this in action in the Resnet18 architecture in Figure 1 and Figure 2. There are a wide range of parameters, all of which do better than the classical minimum (although we need early stopping to get the monotonic decrease).
 
-In this post we'll use the models and problems from the deep double descent paper [Nakkiran et. al, 2019](https://arxiv.org/abs/1912.02292). From that paper, CIFAR10 trained on the Resnet18 served as a great test architecture, as it can be trained at a small cost for many widths and many runs.
+In this post we'll use the models and problems from the deep double descent paper [[Nakkiran et. al, 2019](https://arxiv.org/abs/1912.02292)]. From that paper, CIFAR10 trained on the Resnet18 served as a great test architecture, as it can be trained at a small cost for many widths and many runs.
 
-One important point about the data, CIFAR10 by itself is too easy. Resnet18 saturates performance, approaching 100% accuracy. Models which generalize perfectly over a dataset do not exhibit double descent. So like [Nakkiran et. al, 2019](https://arxiv.org/abs/1912.02292) we randomly mislabel 15% of the training data. This random mislabelling introduces controlled **unexplainable variation**[^2] in the class label. We'll see why this is important in part 2. First, let's replicate the results:
+One important point about the data, CIFAR10 by itself is too easy. Resnet18 saturates performance, approaching 100% accuracy. Models which generalize perfectly over a dataset do not exhibit double descent. So like [[Nakkiran et. al, 2019](https://arxiv.org/abs/1912.02292)] we randomly mislabel 15% of the training data. This random mislabelling introduces controlled **unexplainable variation**[^2] in the class label. We'll see why this is important in part 2. First, let's replicate the results:
 
 ![](/posts/from-double-descent-to-scaling-laws/media/image2.png)
 
@@ -66,7 +66,7 @@ All of that was to say that early stopping makes both the error and the loss mon
 
 ### Transformers
 
-The deep double descent paper also demonstrates the phenomenon in the original sequence to sequence transformer architecture [Vaswani et. al, 2017](https://arxiv.org/abs/1706.03762). I execute a similar training run to them but double the amount of sequence pairs used (18K -> 36K) so we can get a clear view of the classical regime:
+The deep double descent paper also demonstrates the phenomenon in the original sequence to sequence transformer architecture [[Vaswani et. al, 2017](https://arxiv.org/abs/1706.03762)]. I execute a similar training run to them but double the amount of sequence pairs used (18K -> 36K) so we can get a clear view of the classical regime:
 
 ![](/posts/from-double-descent-to-scaling-laws/media/image4.png)
 
@@ -179,15 +179,15 @@ Figure X - Mean test loss, Jensen gap and their difference computed across 4 mod
 
 ## Pre-Trained LLMs
 
-Imagenet, with a million images, seemed like an absurd amount of data at the time. Yet relative to compute, it really wasn't. Researchers eventually found scalable architectures applying techniques like batch norm and skip connections. Through larger models, the compute was scaled, but the dataset remained fixed. The Imagenet-winning Resnet152 [He et. al, 2015](https://arxiv.org/abs/1512.03385) had 60 million parameters, a 60:1 ratio of parameters to training examples.
+Imagenet, with a million images, seemed like an absurd amount of data at the time. Yet relative to compute, it really wasn't. Researchers eventually found scalable architectures applying techniques like batch norm and skip connections. Through larger models, the compute was scaled, but the dataset remained fixed. The Imagenet-winning Resnet152 [[He et. al, 2015](https://arxiv.org/abs/1512.03385)] had 60 million parameters, a 60:1 ratio of parameters to training examples.
 
 The parameter to data ratio that LLMs and even the original transformer were trained with are fundamentally different. In our training run in figure 5 at \~30 output tokens per sentence, 36K sentences, we're training on about 1M output tokens[^12]. Our classical minimum was at d=32, with 515K parameters, a 1:2 p to n ratio. Double descent did not start until d=152 (6 million parameters), a 6:1 p:n ratio.
 
-The largest model from the original transformer paper [Vaswani et. al, 2017](https://arxiv.org/abs/1706.03762) trained on 36M sentences, approximately 1B output tokens, with only 213M parameters. That ratio is 1:5, even lower than the classical minimum for our scaled down version of that architecture. Furthermore the model is only trained for 7 or so epochs (we train ours for about 150). So despite being capable of overparameterization, it was not used to train the original transformer.
+The largest model from the original transformer paper [[Vaswani et. al, 2017](https://arxiv.org/abs/1706.03762)] trained on 36M sentences, approximately 1B output tokens, with only 213M parameters. That ratio is 1:5, even lower than the classical minimum for our scaled down version of that architecture. Furthermore the model is only trained for 7 or so epochs (we train ours for about 150). So despite being capable of overparameterization, it was not used to train the original transformer.
 
-Pretrained LLMs take this further still, first of all each output token is only visited once, i.e. training is a single epoch. As prescribed by the Chinchilla scaling laws [Hoffman, Borgeaud, Mensch et. al 2022](https://arxiv.org/abs/2203.15556), the optimal parameter to token ratio is 1:20. While that was computed for a particular dense, large scale open weight MoE's tend to have a ratio around that number[^13].
+Pretrained LLMs take this further still, first of all each output token is only visited once, i.e. training is a single epoch. As prescribed by the Chinchilla scaling laws [[Hoffman, Borgeaud, Mensch et. al 2022](https://arxiv.org/abs/2203.15556)], the optimal parameter to token ratio is 1:20. While that was computed for a particular dense, large scale open weight MoE's tend to have a ratio around that number[^13].
 
-Even if you tried to argue that the 1:20 parameter was still high, it is simply not feasible to drastically overfit the training loss when you visit each output token once.[^14] Compared to the flagship Resnet, that's a 3 order magnitude change in the ratio.Pre-trained LLM's are well and truly, well-parameterized, and well-calibrated [OpenAI, 2023](https://arxiv.org/pdf/2303.08774).
+Even if you tried to argue that the 1:20 parameter was still high, it is simply not feasible to drastically overfit the training loss when you visit each output token once.[^14] Compared to the flagship Resnet, that's a 3 order magnitude change in the ratio.Pre-trained LLM's are well and truly, well-parameterized, and well-calibrated [[OpenAI, 2023](https://arxiv.org/pdf/2303.08774)].
 
 ### From the Data Bottleneck, to the Compute Bottleneck
 
@@ -207,7 +207,7 @@ Let's summarize:
 
 2.  However in data rich environments like LLM pre-training, we are better off adding more data, rather than overparameterizing, because it is a more compute efficient way of obtaining better performance.
 
-So for deep learning[^17] overparameterization is **broadly effective**, provided you are willing to pay the computer for it. A prominent example of a data constrained domain today is medical image segmentation, where for a variety of reasons, it is difficult to obtain datasets. Convolutional U-Nets [Ronnenberger et. al, 2015](https://arxiv.org/abs/1505.04597) are still the state of the art for image segmentation (see [Ulrich et. al, 2024](https://arxiv.org/abs/2404.09556)).
+So for deep learning[^17] overparameterization is **broadly effective**, provided you are willing to pay the computer for it. A prominent example of a data constrained domain today is medical image segmentation, where for a variety of reasons, it is difficult to obtain datasets. Convolutional U-Nets [[Ronnenberger et. al, 2015](https://arxiv.org/abs/1505.04597)] are still the state of the art for image segmentation (see [[Ulrich et. al, 2024](https://arxiv.org/abs/2404.09556)]).
 
 In the original U-Net paper, there are 30 million parameters for a training set of 30 images, a million to 1 p:n ratio! U-Nets do train pixel by pixel,[^18] even per pixel the ratio is still 4:1[^19]. There is no large dataset or base model to leverage in this domain. The very limited access to data means it makes sense to crank up the parameter count and utilize that GPU.
 

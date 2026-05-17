@@ -102,10 +102,12 @@ def strip_html_artifacts(md: str) -> str:
 
     # Google Docs underlined citation links come through as:
     #   [[\[Author, year\]]{.underline}](url)
-    # Collapse to: [Author, year](url) -- one regex handles all of them.
+    # Rewrite to: [[Author, year](url)] -- the link text becomes
+    # "Author, year" with literal brackets around it (matching the
+    # convention used in the original document).
     md = re.sub(
         r"\[\[\\\[([^\]]+?)\\\]\]\{\.underline\}\]\(([^)]+)\)",
-        r"[\1](\2)",
+        r"[[\1](\2)]",
         md,
     )
     # Any remaining inline-attribute spans (other underlines, smallcaps, etc.).
