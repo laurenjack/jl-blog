@@ -195,6 +195,15 @@ header.site-header .site-title {
 	margin-right: 1.5em;
 }
 
+/* Home page intro */
+p.intro {
+	font-style: italic;
+	font-size: 1.15rem;
+	line-height: 1.55;
+	color: var(--text);
+	margin: 0.5em 0 2em;
+}
+
 /* Index post list */
 ul.post-list {
 	list-style: none;

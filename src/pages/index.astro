@@ -19,8 +19,8 @@ const posts = (await getCollection('blog')).sort(
 	<body>
 		<Header />
 		<main>
-			<p>
-				Notes on machine learning, statistics, and whatever else I'm thinking about.
+			<p class="intro">
+				I write about my ML research interests and AI; all writing is 100% my own.
 			</p>
 			<ul class="post-list">
 				{posts.map((post) => (
