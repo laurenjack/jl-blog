@@ -1,8 +1,10 @@
 ---
 title: "From Double Descent to Scaling Laws"
-description: "Reconciling 2010s deep-learning overfitting with 2020s LLM scaling laws."
+description: "Reconciling 2010s overfitting with 2020s LLM scaling."
 pubDate: "2026-05-16"
 ---
+
+The code for this research can be found [here](https://github.com/laurenjack/jl-research).
 
 **Double descent** is remarkable because it files in the face of supposed machine learning fundamentals. Models which initially perform worse with more parameters, generalize even better as we add even more parameters. Such models perfectly **overfit** their training sets. They predict the correct class / token for every single *training* example, with extreme confidence and zero training loss.
 
@@ -12,11 +14,11 @@ But just as I'd internalized benign overfitting as part of the magic of deep lea
 
 This post reconciles the highly overfitting deep learning models from the 2010's with the scaling-law-driven, pre-trained LLM's of the 2020's. We have three sections:
 
-1.  [**[Double Descent and Overfitting]**](#double-descent-and-overfitting) - We show that deep learning models have monotonically decreasing log loss, never overfitting[^2]. This is mostly a summary and reproduction of the literature
+1.  [**Double Descent and Overfitting**](#double-descent-and-overfitting) - We show that deep learning models have monotonically decreasing log loss, never overfitting[^2]. This is mostly a summary and reproduction of the literature
 
-2.  [**[Bias and Variance]**](#back-to-bias-and-variance) - We decompose the log loss into bias and variance, we take a look at how each drives double descent.
+2.  [**Bias and Variance**](#back-to-bias-and-variance) - We decompose the log loss into bias and variance, we take a look at how each drives double descent.
 
-3.  [**[LLM Pretraining]**](#llm-pretraining) - LLMs are well-parameterized, we demonstrate it empirically by showing they are low variance. We wrap up by discussing the problem spaces where overparameterization helps.
+3.  [**LLM Pretraining**](#llm-pretraining) - LLMs are well-parameterized, we demonstrate it empirically by showing they are low variance. We wrap up by discussing the problem spaces where overparameterization helps.
 
 ## Double Descent and Overfitting
 
@@ -30,7 +32,7 @@ Likewise [Nakkiran et. al, 2019](https://arxiv.org/abs/1912.02292) published *De
 
 Models in the second descent exhibit *benign overfitting*, a term popularized by [Zhang et. al, 2016](https://arxiv.org/abs/1611.03530). They conclude that neural networks, despite having the capacity to fully fit the training data (and doing so), still manage to generalize well. [Belkin et. al, 2018](https://arxiv.org/abs/1812.11118) name the point where the model fits all training class labels perfectly the *interpolation threshold*. Double descent tends to occur around the interpolation threshold.
 
-![](/posts/from-double-descent-to-scaling-laws/media/image2.png)
+![](/posts/from-double-descent-to-scaling-laws/media/image3.png)
 
 People have trained various kinds of overparameterized models since the 90's, especially the Bayesians[^4]. Contrary to popular belief, overparameterization and other violations of the bias-variance trade-off are not new phenomena, nor are they specific to deep learning. *Deep Learning is not so Mysterious or Different* [Wilson, 2025](https://arxiv.org/pdf/2503.02113) provides an excellent summary. The point is, these phenomena have existed for a while, not just in deep learning, and we just began to study them in detail in the late 2010s.
 
@@ -44,7 +46,7 @@ Rather than finding the specific model width that achieves the classical minimum
 
 One important point about the data, CIFAR10 by itself is too easy. Resnet18 saturates performance, approaching 100% accuracy. Models which generalize perfectly over a dataset do not exhibit double descent. So like [Nakkiran et. al, 2019](https://arxiv.org/abs/1912.02292) we randomly mislabel 15% of the training data. This random mislabelling introduces controlled **unexplainable variation**[^5] in the class label. We'll see why this is important later. First, let's replicate the results:
 
-![](/posts/from-double-descent-to-scaling-laws/media/image6.png)
+![](/posts/from-double-descent-to-scaling-laws/media/image7.png)
 
 **Figure 2** - **The second descent regime is poorly calibrated.** We replicate[^6] the results in Deep Double Descent [Nakkiran et. al, 2019], also showing and log loss[^7]. It is important to note the model is trained on the 85% mislabelled CIFAR10 training set, but the test set is clean. The log loss also exhibits double descent, but the loss is much higher than the classical minimum.
 
@@ -52,7 +54,7 @@ Classification error (whether top1 or top5) was the eval that mattered for compe
 
 The log loss reflects how well calibrated the model is[^8]. In addition, the log loss better captures how well the model captures the distribution (important as a base for post-training). Thankfully, both early stopping and temperature scaling [Guo et. al, 2017](https://arxiv.org/abs/1706.04599) resolve this.
 
-![](/posts/from-double-descent-to-scaling-laws/media/image7.png)
+![](/posts/from-double-descent-to-scaling-laws/media/image5.png)
 
 **Figure 3 - Early stopping eliminates double descent for both the loss and accuracy** - I retrain the Resnet18 models on 45K/5K train/val split (so we can get a validation set). The slightly smaller training set does not change accuracy much. Then we calibrate the model with temperature scaling on the validation set[^9]. Early Stopping completely eliminates the double descent effect.
 
@@ -62,7 +64,7 @@ All of that was to say that early stopping makes both the error and the loss mon
 
 The deep double descent paper also demonstrates the phenomenon in the original sequence to sequence transformer architecture [Vaswani et. al, 2017](https://arxiv.org/abs/1706.03762). I execute a similar training run to them but double the amount of sequence pairs used (18K -> 36K) so we can get a clear view of the classical regime:
 
-![](/posts/from-double-descent-to-scaling-laws/media/image5.png)
+![](/posts/from-double-descent-to-scaling-laws/media/image6.png)
 
 **Figure 4: Transformers also exhibit monotonically increasing performance with respect to model size** - Double descent is observed, trained on 36K sequence pairs from ISWLT14 english-german. The architecture used closely mirrors the original transformer architecture, following the approach in the double descent paper. However, we train with the more modern AdamW, and remove label smoothing which distorts the logits (and turns out not to be necessary).
 
@@ -173,11 +175,11 @@ For the sake of readability, I have omitted the indices inside the sum. Each x i
 
 Of course, we do not know $p(y|x)$ or $H(p(y |x ))$ for that matter. We cannot compute our bias term separately from the entropy. $H(p(y |x ))$ has nothing to do with our model, it is intrinsic to the data, so we know that it remains constant as we vary the number of parameters. So by observing loss - variance = entropy + bias as we increase model size, we can deduce the change in the bias:
 
-![](/posts/from-double-descent-to-scaling-laws/media/image4.png)
+![](/posts/from-double-descent-to-scaling-laws/media/image2.png)
 
 **Figure 5: Resnet18 model variance dominates as model size increases** - We plot the mean test loss, Jensen gap and their difference computed across 4 models, trained on 4 disjoint training sets at increasing model widths. Aside from the training set size, the setup is exactly the same as in figure 2. For low k, we observe the classical bias variance trade off (given the low sample size we miss the classical minimum in the loss). As k increases into the double descent regime, we see that bias and variance both decrease.
 
-![](/posts/from-double-descent-to-scaling-laws/media/image3.png)
+![](/posts/from-double-descent-to-scaling-laws/media/image4.png)
 
 **Figure 6: Transformer bias and variance both rise and fall with double descent** The same 3 quantities are plotted, this time with 8 different models trained on 8 disjoint datasets of 18K sequences. Interestingly, bias also rises as we approach the loss peak.
 

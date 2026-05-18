@@ -114,6 +114,14 @@ def strip_html_artifacts(md: str) -> str:
     )
     # Any remaining inline-attribute spans (other underlines, smallcaps, etc.).
     md = re.sub(r"\]\{[^}]*\}", "]", md)
+    # Google Docs in-page bookmark links written with bracket styling come
+    # through as `[**[Section name]**](#anchor)` after the underline strip
+    # above — collapse to `[**Section name**](#anchor)`.
+    md = re.sub(
+        r"\[\*\*\[([^\]]+?)\]\*\*\]\((#[^)]+)\)",
+        r"[**\1**](\2)",
+        md,
+    )
     for _ in range(3):
         new = re.sub(r"\[\[([^\[\]]+)\]\]\(", r"[\1](", md)
         if new == md:
