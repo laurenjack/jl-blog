@@ -1,7 +1,7 @@
 ---
 title: "From Double Descent to Scaling Laws"
 description: "Reconciling 2010s overfitting with 2020s LLM scaling."
-pubDate: "2026-05-16"
+pubDate: "2026-04-26"
 ---
 
 The code for this research can be found [here](https://github.com/laurenjack/jl-research).
