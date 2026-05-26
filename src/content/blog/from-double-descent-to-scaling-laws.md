@@ -1,6 +1,6 @@
 ---
 title: "From Double Descent to Scaling Laws"
-description: "Reconciling 2010s overfitting with 2020s LLM scaling."
+description: "Reconciling 2010s overfitting with 2020s LLM scaling"
 pubDate: "2026-04-26"
 ---
 

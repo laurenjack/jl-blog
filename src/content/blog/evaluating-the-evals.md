@@ -1,6 +1,6 @@
 ---
 title: "Evaluating the Evals"
-description: ""
+description: "Empirical feedback loops determine market structure in AI"
 pubDate: "2026-05-24"
 ---
 
