@@ -1,5 +1,5 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
@@ -9,8 +9,6 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
-const post = posts[0];
-const { Content } = await render(post);
 ---
 
 <!doctype html>
@@ -24,15 +22,21 @@ const { Content } = await render(post);
 			<p class="intro">
 				I write about ML research, and AI more generally. All posts are 100% human written.
 			</p>
-			<article>
-				<header class="post-header">
-					<h1>{post.data.title}</h1>
-					<div class="post-meta">
-						<FormattedDate date={post.data.pubDate} />
-					</div>
-				</header>
-				<Content />
-			</article>
+			<ul class="post-list">
+				{posts.map((post) => (
+					<li>
+						<div class="post-date">
+							<FormattedDate date={post.data.pubDate} />
+						</div>
+						<div class="post-title">
+							<a href={`/blog/${post.id}/`}>{post.data.title}</a>
+						</div>
+						{post.data.description && (
+							<div class="post-desc">{post.data.description}</div>
+						)}
+					</li>
+				))}
+			</ul>
 		</main>
 		<Footer />
 	</body>

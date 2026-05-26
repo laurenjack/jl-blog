@@ -101,6 +101,10 @@ def strip_html_artifacts(md: str) -> str:
     # Raw underline tags from Google Docs underlined links.
     md = re.sub(r"</?u>", "", md)
 
+    # Strip a leading H1 (title) — the post layout already renders the title
+    # from the frontmatter, so a `# Title` in the body would duplicate it.
+    md = re.sub(r"\A\s*#\s+[^\n]+\n+", "", md)
+
     # Pandoc image-attribute blocks: ![](path){width="..." ...}  ->  ![](path)
     md = re.sub(r"(\!\[[^\]]*\]\([^)]+\))\{[^}]*\}", r"\1", md)
 
