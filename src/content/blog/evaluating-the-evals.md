@@ -1,6 +1,6 @@
 ---
 title: "Evaluating the Evals"
-description: "Empirical feedback loops determine market structure in AI"
+description: "The bottleneck that determines the winners in AI"
 pubDate: "2026-05-24"
 ---
 
