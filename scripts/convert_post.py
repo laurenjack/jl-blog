@@ -145,6 +145,13 @@ def strip_html_artifacts(md: str) -> str:
     # opens with `$` and ends with `\$` is a malformed inline math close.
     md = re.sub(r"^\$(.+?)\\\$$", r"$\1$", md, flags=re.MULTILINE)
 
+    # Strip stray trailing `$$` that pandoc leaves at the end of a content
+    # line (usually from an empty equation block in the source docx).
+    # Leaves valid standalone `$$` delimiter lines alone — they have no
+    # other content before the `$$`. Match only spaces/tabs (not newlines)
+    # so the surrounding blank lines are preserved.
+    md = re.sub(r"^(.+?\S)[ \t]+\$\$[ \t]*$", r"\1", md, flags=re.MULTILINE)
+
     # Promote standalone-line inline math to display math.
     # Pandoc emits all OMML equations as `$...$` (inline), even when they
     # occupy a whole paragraph. Remark-math only treats `$$` as display
@@ -209,28 +216,49 @@ MATH_SUBS: list[tuple[str, str]] = [
     (r"\|\|", r"\\|"),
     # Common math function names: log -> \log etc.
     (rf"(?<![\\A-Za-z])({'|'.join(_MATH_FUNCS)})\b", r"\\\1"),
+    # `^{\frac{a}{b}}` and `_{\frac{a}{b}}` inside super/subscripts collapse
+    # to scriptscriptstyle, making letters like `T` nearly unreadable.
+    # Rewrite as `^{a/b}` so the parts stay legible. The inner content
+    # allows one level of nested braces (e.g. `w_{0}`).
+    (r"(\^|_)\{\\frac\{((?:[^{}]|\{[^{}]*\})+?)\}\{((?:[^{}]|\{[^{}]*\})+?)\}\}",
+     r"\1{\2/\3}"),
+]
+
+# Substitutions that only apply inside display math `$$...$$`. We want
+# `\sum`/`\prod` to stay full-size with limits above/below even when nested
+# inside `\frac{}{}` — KaTeX shrinks them to textstyle otherwise.
+DISPLAY_MATH_SUBS: list[tuple[str, str]] = [
+    (r"\\sum(?![A-Za-z])", r"\\displaystyle\\sum"),
+    (r"\\prod(?![A-Za-z])", r"\\displaystyle\\prod"),
 ]
 
 
 def apply_math_substitutions(md: str) -> str:
-    """Apply MATH_SUBS only inside $...$ and $$...$$ regions."""
+    """Apply MATH_SUBS to all math; DISPLAY_MATH_SUBS to `$$...$$` only."""
     pattern = re.compile(r"(\$\$.+?\$\$|\$[^$\n]+?\$)", re.DOTALL)
 
     def process(match: re.Match[str]) -> str:
         s = match.group(0)
         for pat, repl in MATH_SUBS:
             s = re.sub(pat, repl, s)
+        if s.startswith("$$"):
+            for pat, repl in DISPLAY_MATH_SUBS:
+                s = re.sub(pat, repl, s)
         return s
 
     return pattern.sub(process, md)
 
 
-def build_frontmatter(title: str, description: str, date: str) -> str:
+CATEGORIES = ("research", "tutorial", "hot-take")
+
+
+def build_frontmatter(title: str, description: str, category: str, date: str) -> str:
     desc = description.replace('"', "'")
     return (
         "---\n"
         f"title: \"{title}\"\n"
         f"description: \"{desc}\"\n"
+        f"category: {category}\n"
         f"pubDate: \"{date}\"\n"
         "---\n\n"
     )
@@ -243,6 +271,8 @@ def main() -> int:
     p.add_argument("--title", default=None, help="Post title (default: derived from filename).")
     p.add_argument("--date", default=None, help="Publication date YYYY-MM-DD (default: today).")
     p.add_argument("--description", default="", help="Short description for SEO + post list.")
+    p.add_argument("--category", required=True, choices=CATEGORIES,
+                   help="Post category — drives the color tag on the home page.")
     args = p.parse_args()
 
     if not args.docx.exists():
@@ -266,7 +296,7 @@ def main() -> int:
     md = rewrite_image_paths(md, slug)
     md = strip_html_artifacts(md)
     md = apply_math_substitutions(md)
-    md = build_frontmatter(title, args.description, date) + md
+    md = build_frontmatter(title, args.description, args.category, date) + md
 
     CONTENT_DIR.mkdir(parents=True, exist_ok=True)
     out = CONTENT_DIR / f"{slug}.md"

@@ -212,27 +212,36 @@ ul.post-list {
 	margin: 1.5em 0 0;
 }
 ul.post-list li {
-	margin-bottom: 1.4em;
-	padding-bottom: 1.4em;
-	border-bottom: 1px solid var(--rule);
+	margin-bottom: 1.1em;
+	padding: 1em 1.2em;
+	border-radius: 12px;
+	background: rgba(0, 0, 0, 0.03);
 }
-ul.post-list li:last-child { border-bottom: none; }
-ul.post-list .post-date {
-	color: var(--text-muted);
-	font-size: 0.88em;
-	margin-bottom: 0.2em;
-}
+ul.post-list li.research  { background: rgba(38, 92, 142, 0.10); }
+ul.post-list li.tutorial  { background: rgba(46, 125, 50, 0.10); }
+ul.post-list li.hot-take  { background: rgba(204, 102, 0, 0.12); }
 ul.post-list .post-title {
 	font-size: 1.15rem;
 	font-weight: 600;
-	margin: 0 0 0.3em;
+	margin: 0 0 0.25em;
 }
 ul.post-list .post-title a { text-decoration: none; }
 ul.post-list .post-title a:hover { text-decoration: underline; }
 ul.post-list .post-desc {
-	color: var(--text-muted);
+	color: #333;
 	font-size: 0.95em;
 }
+ul.post-list .post-date {
+	color: var(--text-muted);
+	font-size: 0.78em;
+	font-style: italic;
+	margin-top: 0.4em;
+}
+
+/* Inline category labels in the intro paragraph. */
+.cat-research { color: #265c8e; font-weight: 600; font-style: normal; }
+.cat-tutorial { color: #2e7d32; font-weight: 600; font-style: normal; }
+.cat-hot-take { color: #c66600; font-weight: 600; font-style: normal; }
 
 /* Blog post header */
 .post-header {

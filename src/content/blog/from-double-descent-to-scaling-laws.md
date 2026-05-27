@@ -1,10 +1,9 @@
 ---
 title: "From Double Descent to Scaling Laws"
-description: "Reconciling 2010s overfitting with 2020s LLM scaling"
+description: "Decomposing double descent into bias and variance, showing LLMs have remarkably low variance"
+category: research
 pubDate: "2026-04-26"
 ---
-
-The code for this research can be found [here](https://github.com/laurenjack/jl-research).
 
 **Double descent** is remarkable because it files in the face of supposed machine learning fundamentals. Models which initially perform worse with more parameters, generalize even better as we add even more parameters. Such models perfectly **overfit** their training sets. They predict the correct class / token for every single *training* example, with extreme confidence and zero training loss.
 
@@ -20,6 +19,8 @@ This post reconciles the highly overfitting deep learning models from the 2010's
 
 3.  [**LLM Pretraining**](#llm-pretraining) - LLMs are well-parameterized, we demonstrate it empirically by showing they are low variance. We wrap up by discussing the problem spaces where overparameterization helps.
 
+The code for this research can be found [here](https://github.com/laurenjack/jl-research), the LLM part is a [fork](https://github.com/laurenjack/nanochat-variance/tree/variance-decomposition) of nanochat.
+
 ## Double Descent and Overfitting
 
 Smaller models, trained for shorter durations tend to be **biased** because they cannot sufficiently express the true data distribution, systematically under or overestimating. As we increase the size of the model, provided the model becomes increasingly well-specified, it can better express the true distribution. However the larger model will also more readily fit the random noise of our particular training set. Fitting to this noise creates random features in the model, leading to higher error on unseen data from the same distribution. That is, as we increase model size on a fixed dataset, **variance** tends to increase.
@@ -32,7 +33,7 @@ Likewise [Nakkiran et. al, 2019](https://arxiv.org/abs/1912.02292) published *De
 
 Models in the second descent exhibit *benign overfitting*, a term popularized by [Zhang et. al, 2016](https://arxiv.org/abs/1611.03530). They conclude that neural networks, despite having the capacity to fully fit the training data (and doing so), still manage to generalize well. [Belkin et. al, 2018](https://arxiv.org/abs/1812.11118) name the point where the model fits all training class labels perfectly the *interpolation threshold*. Double descent tends to occur around the interpolation threshold.
 
-![](/posts/from-double-descent-to-scaling-laws/media/image3.png)
+![](/posts/from-double-descent-to-scaling-laws/media/image4.png)
 
 People have trained various kinds of overparameterized models since the 90's, especially the Bayesians[^4]. Contrary to popular belief, overparameterization and other violations of the bias-variance trade-off are not new phenomena, nor are they specific to deep learning. *Deep Learning is not so Mysterious or Different* [Wilson, 2025](https://arxiv.org/pdf/2503.02113) provides an excellent summary. The point is, these phenomena have existed for a while, not just in deep learning, and we just began to study them in detail in the late 2010s.
 
@@ -175,11 +176,11 @@ For the sake of readability, I have omitted the indices inside the sum. Each x i
 
 Of course, we do not know $p(y|x)$ or $H(p(y |x ))$ for that matter. We cannot compute our bias term separately from the entropy. $H(p(y |x ))$ has nothing to do with our model, it is intrinsic to the data, so we know that it remains constant as we vary the number of parameters. So by observing loss - variance = entropy + bias as we increase model size, we can deduce the change in the bias:
 
-![](/posts/from-double-descent-to-scaling-laws/media/image2.png)
+![](/posts/from-double-descent-to-scaling-laws/media/image1.png)
 
 **Figure 5: Resnet18 model variance dominates as model size increases** - We plot the mean test loss, Jensen gap and their difference computed across 4 models, trained on 4 disjoint training sets at increasing model widths. Aside from the training set size, the setup is exactly the same as in figure 2. For low k, we observe the classical bias variance trade off (given the low sample size we miss the classical minimum in the loss). As k increases into the double descent regime, we see that bias and variance both decrease.
 
-![](/posts/from-double-descent-to-scaling-laws/media/image4.png)
+![](/posts/from-double-descent-to-scaling-laws/media/image2.png)
 
 **Figure 6: Transformer bias and variance both rise and fall with double descent** The same 3 quantities are plotted, this time with 8 different models trained on 8 disjoint datasets of 18K sequences. Interestingly, bias also rises as we approach the loss peak.
 
@@ -195,7 +196,7 @@ If there's anything to glean from figures 5 and 6, it's that we shouldn't believ
 
 This means the double descent bump must be induced by the mislabelled points. The test set is clean, so any failed classification is genuine degradation. Figure 7 shows the difference between a clean trained model and our dirty one:
 
-![](/posts/from-double-descent-to-scaling-laws/media/image1.png)
+![](/posts/from-double-descent-to-scaling-laws/media/image3.png)
 
 **Figure 7: The effect of adding mislabelled data** We show two models here both trained on the exact same set of clean examples. The red line shows our original Resnet18, the blue only *subtracts* all the mislabelled examples. Both are evaluated on the clean test set.
 

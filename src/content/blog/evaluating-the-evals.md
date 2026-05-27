@@ -1,7 +1,8 @@
 ---
 title: "Evaluating the Evals"
 description: "The bottleneck that determines the winners in AI"
-pubDate: "2026-05-24"
+category: hot-take
+pubDate: "2026-05-13"
 ---
 
 The most interesting lesson I learned transitioning from academic ML to industry is how weakly evals predict real world performance. This well-known [result](https://chbrown.github.io/kdd-2013-usb/kdd/p1168.pdf) from Microsoft demonstrated exactly that, the conclusion being "focus more on running lots of AB rests, less on perfecting algorithms".
