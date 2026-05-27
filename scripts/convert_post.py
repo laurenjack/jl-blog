@@ -23,6 +23,7 @@ and today's date. Re-run freely; output files are overwritten.
 from __future__ import annotations
 
 import argparse
+import ast
 import datetime as dt
 import re
 import shutil
@@ -33,6 +34,9 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 CONTENT_DIR = REPO / "src" / "content" / "blog"
 PUBLIC_POSTS_DIR = REPO / "public" / "posts"
+# Where to look up `{{code: ...}}` snippet paths. Defaults to a sibling
+# repo. Override per-invocation with `--snippets-root`.
+DEFAULT_SNIPPETS_ROOT = REPO.parent / "jl-explainers"
 
 
 def slugify(name: str) -> str:
@@ -100,6 +104,16 @@ def strip_html_artifacts(md: str) -> str:
     plain markdown renderers won't understand."""
     # Raw underline tags from Google Docs underlined links.
     md = re.sub(r"</?u>", "", md)
+
+    # Strip stray escaped triple-backtick lines (`\`\`\`` typed literally in
+    # the source — usually leftover from an older code-block convention).
+    md = re.sub(r"^\\`\\`\\`\s*$\n?", "", md, flags=re.MULTILINE)
+
+    # Drop Google Docs code-block markers (U+EC03 / U+EC02). Code blocks
+    # are pulled from real .py files via the {{code: ...}} placeholder
+    # (see `include_snippets`) — anything still inside a gdocs Code Block
+    # has lost its indentation by export time anyway.
+    md = re.sub(r"[]", "", md)
 
     # Strip a leading H1 (title) — the post layout already renders the title
     # from the frontmatter, so a `# Title` in the body would duplicate it.
@@ -249,6 +263,62 @@ def apply_math_substitutions(md: str) -> str:
     return pattern.sub(process, md)
 
 
+def _extract_symbol(source: str, symbol: str, file_path: Path) -> str:
+    """Return the source text of a top-level def/class named `symbol`.
+    Includes any decorators. Raises ValueError if not found."""
+    tree = ast.parse(source)
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            if node.name == symbol:
+                start = node.decorator_list[0].lineno if node.decorator_list else node.lineno
+                lines = source.splitlines()
+                return "\n".join(lines[start - 1 : node.end_lineno])
+    raise ValueError(f"symbol {symbol!r} not found in {file_path}")
+
+
+def _extract_lines(source: str, spec: str, file_path: Path) -> str:
+    """Slice `source` by 1-based line range. `spec` is like `L10` or
+    `L10-20` (inclusive). The leading `L` makes the syntax visually
+    distinguishable from a symbol name."""
+    m = re.fullmatch(r"L(\d+)(?:-(\d+))?", spec)
+    if not m:
+        raise ValueError(f"bad line spec {spec!r} for {file_path}")
+    start = int(m.group(1))
+    end = int(m.group(2)) if m.group(2) else start
+    lines = source.splitlines()
+    if start < 1 or end > len(lines) or start > end:
+        raise ValueError(f"line range {start}-{end} out of bounds in {file_path}")
+    return "\n".join(lines[start - 1 : end])
+
+
+def include_snippets(md: str, snippets_root: Path) -> str:
+    """Replace `{{code: <relpath>[#target]}}` placeholders with fenced
+    python code blocks pulled from the snippets root.
+
+    `<relpath>` is resolved relative to `snippets_root`. `#target` is
+    either a symbol name (top-level class or function, decorators
+    included) or a line range like `L10-20`. Omit it to inline the
+    whole file.
+    """
+    def repl(m: re.Match[str]) -> str:
+        spec = m.group(1).strip()
+        rel, _, target = spec.partition("#")
+        rel = rel.strip()
+        target = target.strip()
+        file_path = (snippets_root / rel).resolve()
+        if not file_path.is_file():
+            raise FileNotFoundError(f"snippet not found: {file_path}")
+        source = file_path.read_text(encoding="utf-8")
+        if not target:
+            content = source.rstrip()
+        elif re.fullmatch(r"L\d+(?:-\d+)?", target):
+            content = _extract_lines(source, target, file_path)
+        else:
+            content = _extract_symbol(source, target, file_path)
+        return f"```python\n{content}\n```"
+    return re.sub(r"\{\{\s*code:\s*([^}]+?)\s*\}\}", repl, md)
+
+
 CATEGORIES = ("research", "tutorial", "hot-take")
 
 
@@ -273,6 +343,8 @@ def main() -> int:
     p.add_argument("--description", default="", help="Short description for SEO + post list.")
     p.add_argument("--category", required=True, choices=CATEGORIES,
                    help="Post category — drives the color tag on the home page.")
+    p.add_argument("--snippets-root", type=Path, default=DEFAULT_SNIPPETS_ROOT,
+                   help="Root for `{{code: ...}}` snippet lookups (default: ../jl-explainers).")
     args = p.parse_args()
 
     if not args.docx.exists():
@@ -296,6 +368,7 @@ def main() -> int:
     md = rewrite_image_paths(md, slug)
     md = strip_html_artifacts(md)
     md = apply_math_substitutions(md)
+    md = include_snippets(md, args.snippets_root)
     md = build_frontmatter(title, args.description, args.category, date) + md
 
     CONTENT_DIR.mkdir(parents=True, exist_ok=True)
