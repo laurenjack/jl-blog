@@ -1,7 +1,7 @@
 ---
 title: "Evaluating the Evals"
 description: "The bottleneck that determines the winners in AI"
-category: hot-take
+category: essay
 pubDate: "2026-05-13"
 ---
 

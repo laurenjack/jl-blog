@@ -319,7 +319,7 @@ def include_snippets(md: str, snippets_root: Path) -> str:
     return re.sub(r"\{\{\s*code:\s*([^}]+?)\s*\}\}", repl, md)
 
 
-CATEGORIES = ("research", "tutorial", "hot-take")
+CATEGORIES = ("research", "explainer", "essay")
 
 
 def build_frontmatter(title: str, description: str, category: str, date: str) -> str:

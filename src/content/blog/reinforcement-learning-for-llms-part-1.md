@@ -1,7 +1,7 @@
 ---
 title: "Reinforcement Learning for LLMs - Part 1"
 description: "A clear tutorial from RL basics, to pre-training, to RLHF and RLVR. Skips the historical baggage"
-category: tutorial
+category: explainer
 pubDate: "2026-05-24"
 ---
 

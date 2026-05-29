@@ -21,9 +21,6 @@ const posts = (await getCollection('blog')).sort(
 		<main>
 			<p class="intro">
 				I write about ML research, and AI more generally. All posts are 100% human written.
-				<span class="cat-research">Blue posts</span> are my own personal research,
-				<span class="cat-tutorial">green posts</span> are tutorials, and
-				<span class="cat-hot-take">orange posts</span> are essays.
 			</p>
 			<ul class="post-list">
 				{posts.map((post) => (
