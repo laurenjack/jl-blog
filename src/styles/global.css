@@ -250,11 +250,10 @@ ul.post-list li {
 	padding: 1.1em 1.3em;
 	border: 1px solid var(--rule);
 	border-left-width: 4px;
-	border-radius: 8px;
-	background: #fff;
+	background: #f1ede4;
 	transition: background 120ms ease, border-color 120ms ease;
 }
-ul.post-list li:hover  { background: #fbfaf7; border-color: #b8b2a3; }
+ul.post-list li:hover  { background: var(--bg); border-color: #b8b2a3; }
 ul.post-list li.research  { border-left-color: var(--cat-research); }
 ul.post-list li.explainer { border-left-color: var(--cat-explainer); }
 ul.post-list li.essay     { border-left-color: var(--cat-essay); }
