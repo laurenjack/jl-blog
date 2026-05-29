@@ -1,6 +1,6 @@
 ---
 title: "From Double Descent to Scaling Laws"
-description: "Decomposing double descent into bias and variance, showing LLMs have remarkably low variance"
+description: "From high variance CNNs, to low variance LLMs"
 category: research
 pubDate: "2026-04-26"
 ---
