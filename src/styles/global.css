@@ -250,6 +250,7 @@ ul.post-list li {
 	padding: 1.1em 1.3em;
 	border: 1px solid var(--rule);
 	border-left-width: 4px;
+	border-radius: 8px;
 	background: #f1ede4;
 	transition: background 120ms ease, border-color 120ms ease;
 }
